@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package train_ticketing;
+
+option go_package ="./generated";
+
+// Message for representing a user.
+message User {
+  string UserID =1;
+  string FirstName = 2;
+  string LastName = 3;
+  string Email = 4;
+  string CreatedOn=5;
+  string ModifiedOn=6;
+}
+message CreateUserRequest {
+  string FirstName = 2;
+  string LastName = 3;
+  string Email = 4;
+}
+// Message for representing a train ticket purchase.
+message Ticket {
+  string from = 1;
+  string to = 2;
+  User user = 3;
+  float price_paid = 4;
+  string section = 5; 
+  string seat_number = 6;
+  string CreatedOn=7;
+  string ModifiedOn=8;
+}
+
+message Section {
+ string Section = 1;
+ int32 TotalSeats = 2;
+ int32 AvailableSeats = 3;
+  string CreatedOn=4;
+  string ModifiedOn=5;
+}
+// Service definition for train ticketing.
+service TrainTicketing {
+  rpc CreateSection(Section)returns(Section);
+  rpc ViewSections(SectionRequest) returns(AllSections);
+  rpc DeleteSections(SectionRequest) returns(Bool);
+  rpc ModifySections(Section) returns (Section);
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc GetUsers(UseRequest) returns (AllUsers);
+  rpc ModifyUser(User) returns (User);
+  rpc RemoveUser(User) returns (EmptyResponse);
+  rpc PurchaseTicket(Ticket) returns (Ticket);
+  rpc ViewReceipt(User) returns (Ticket);
+  rpc ViewSeatsBySection(Section) returns (SeatAllocation);
+  rpc CancelReceipt(Ticket) returns (Bool);
+  rpc ModifySeat(Ticket) returns (Ticket);
+}
+
+message AllSections {
+  repeated Section sections = 1;
+}
+message AllUsers {
+  repeated User users = 1;
+}
+
+// Message for representing seat allocation.
+message SeatAllocation {
+  repeated Ticket tickets = 1;
+}
+// Boolean message type
+message Bool {
+    bool value = 1;
+}
+
+message UseRequest {
+  string UserID = 1; 
+}
+message SectionRequest {
+  string Section = 1; 
+}
+
+// Empty response message.
+message EmptyResponse {}
