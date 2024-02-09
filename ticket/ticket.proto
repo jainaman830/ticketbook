@@ -20,18 +20,22 @@ message CreateUserRequest {
 }
 // Message for representing a train ticket purchase.
 message Ticket {
+  string TicketId=1;
+  string from = 2;
+  string to = 3;
+  string UserID = 4;
+  float price_paid = 5;
+  string section = 6; 
+  int32 seat_number = 7;
+  string CreatedOn=8;
+  string ModifiedOn=9;
+}
+message TicketRequest {
   string from = 1;
   string to = 2;
   string UserID = 3;
   float price_paid = 4;
-  string section = 5; 
-  string seat_number = 6;
-  string PassengerName = 7;
-  string PassengerAge=8;
-  string CreatedOn=9;
-  string ModifiedOn=10;
 }
-
 message Section {
   string SectionID=1;
   string Section = 2;
@@ -44,23 +48,40 @@ message CreateSectionRequest {
   string Section = 1;
   int32 TotalSeats = 2;
 }
+message ModifySectionRequest {
+  string SectionID=1;
+  string Section = 2;
+}
+message ModifySeatRequest{
+  string UserID=1;
+  string Section=2;
+  int32 SeatNumber=3;
+}
 // Service definition for train ticketing.
 service TrainTicketing {
   rpc CreateSection(CreateSectionRequest)returns(Section);
   rpc ViewSections(SectionRequest) returns(AllSections);
-  rpc DeleteSections(SectionRequest) returns(EmptyResponse);
-  rpc ModifySections(Section) returns (Section);
+  rpc ModifySections(ModifySectionRequest) returns (Section);
   rpc CreateUser(CreateUserRequest) returns (User);
   rpc GetUsers(UseRequest) returns (AllUsers);
   rpc ModifyUser(User) returns (User);
   rpc RemoveUser(UseRequest) returns (EmptyResponse);
-  rpc PurchaseTicket(Ticket) returns (Ticket);
-  rpc ViewReceipt(User) returns (Ticket);
-  rpc ViewSeatsBySection(Section) returns (SeatAllocation);
-  rpc CancelReceipt(Ticket) returns (Bool);
-  rpc ModifySeat(Ticket) returns (Ticket);
+  rpc PurchaseTicket(TicketRequest) returns (Ticket);
+  rpc ViewReceipt(UseRequest) returns (Receipt);
+  rpc ViewSeatsBySection(SectionRequest) returns (SeatAllocation);
+  rpc CancelReceipt(UseRequest) returns (EmptyResponse);
+  rpc ModifySeat(ModifySeatRequest) returns (Ticket);
 }
-
+message Receipt {
+  string from = 1;
+  string to = 2;
+  User user = 3;
+  float price_paid = 4;
+  string section = 5; 
+  int32 seat_number = 6;
+  string CreatedOn=7;
+  string ModifiedOn=8;
+}
 message AllSections {
   repeated Section sections = 1;
 }
@@ -68,9 +89,14 @@ message AllUsers {
   repeated User users = 1;
 }
 
-// Message for representing seat allocation.
+// Message for representing seat allocation
+message SeatDetails {
+string UserName =1;
+string Email=2;
+int32 SeatNumber=3;
+}
 message SeatAllocation {
-  repeated Ticket tickets = 1;
+  repeated SeatDetails tickets = 1;
 }
 // Boolean message type
 message Bool {
