@@ -22,31 +22,38 @@ message CreateUserRequest {
 message Ticket {
   string from = 1;
   string to = 2;
-  User user = 3;
+  string UserID = 3;
   float price_paid = 4;
   string section = 5; 
   string seat_number = 6;
-  string CreatedOn=7;
-  string ModifiedOn=8;
+  string PassengerName = 7;
+  string PassengerAge=8;
+  string CreatedOn=9;
+  string ModifiedOn=10;
 }
 
 message Section {
- string Section = 1;
- int32 TotalSeats = 2;
- int32 AvailableSeats = 3;
-  string CreatedOn=4;
-  string ModifiedOn=5;
+  string SectionID=1;
+  string Section = 2;
+  int32 TotalSeats = 3;
+  int32 AvailableSeats = 4;
+  string CreatedOn=5;
+  string ModifiedOn=6;
+}
+message CreateSectionRequest {
+  string Section = 1;
+  int32 TotalSeats = 2;
 }
 // Service definition for train ticketing.
 service TrainTicketing {
-  rpc CreateSection(Section)returns(Section);
+  rpc CreateSection(CreateSectionRequest)returns(Section);
   rpc ViewSections(SectionRequest) returns(AllSections);
-  rpc DeleteSections(SectionRequest) returns(Bool);
+  rpc DeleteSections(SectionRequest) returns(EmptyResponse);
   rpc ModifySections(Section) returns (Section);
   rpc CreateUser(CreateUserRequest) returns (User);
   rpc GetUsers(UseRequest) returns (AllUsers);
   rpc ModifyUser(User) returns (User);
-  rpc RemoveUser(User) returns (EmptyResponse);
+  rpc RemoveUser(UseRequest) returns (EmptyResponse);
   rpc PurchaseTicket(Ticket) returns (Ticket);
   rpc ViewReceipt(User) returns (Ticket);
   rpc ViewSeatsBySection(Section) returns (SeatAllocation);
@@ -74,7 +81,7 @@ message UseRequest {
   string UserID = 1; 
 }
 message SectionRequest {
-  string Section = 1; 
+  string SectionID = 1; 
 }
 
 // Empty response message.

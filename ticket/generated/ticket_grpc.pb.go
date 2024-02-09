@@ -38,14 +38,14 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TrainTicketingClient interface {
-	CreateSection(ctx context.Context, in *Section, opts ...grpc.CallOption) (*Section, error)
+	CreateSection(ctx context.Context, in *CreateSectionRequest, opts ...grpc.CallOption) (*Section, error)
 	ViewSections(ctx context.Context, in *SectionRequest, opts ...grpc.CallOption) (*AllSections, error)
-	DeleteSections(ctx context.Context, in *SectionRequest, opts ...grpc.CallOption) (*Bool, error)
+	DeleteSections(ctx context.Context, in *SectionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ModifySections(ctx context.Context, in *Section, opts ...grpc.CallOption) (*Section, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error)
 	GetUsers(ctx context.Context, in *UseRequest, opts ...grpc.CallOption) (*AllUsers, error)
 	ModifyUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
-	RemoveUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*EmptyResponse, error)
+	RemoveUser(ctx context.Context, in *UseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	PurchaseTicket(ctx context.Context, in *Ticket, opts ...grpc.CallOption) (*Ticket, error)
 	ViewReceipt(ctx context.Context, in *User, opts ...grpc.CallOption) (*Ticket, error)
 	ViewSeatsBySection(ctx context.Context, in *Section, opts ...grpc.CallOption) (*SeatAllocation, error)
@@ -61,7 +61,7 @@ func NewTrainTicketingClient(cc grpc.ClientConnInterface) TrainTicketingClient {
 	return &trainTicketingClient{cc}
 }
 
-func (c *trainTicketingClient) CreateSection(ctx context.Context, in *Section, opts ...grpc.CallOption) (*Section, error) {
+func (c *trainTicketingClient) CreateSection(ctx context.Context, in *CreateSectionRequest, opts ...grpc.CallOption) (*Section, error) {
 	out := new(Section)
 	err := c.cc.Invoke(ctx, TrainTicketing_CreateSection_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -79,8 +79,8 @@ func (c *trainTicketingClient) ViewSections(ctx context.Context, in *SectionRequ
 	return out, nil
 }
 
-func (c *trainTicketingClient) DeleteSections(ctx context.Context, in *SectionRequest, opts ...grpc.CallOption) (*Bool, error) {
-	out := new(Bool)
+func (c *trainTicketingClient) DeleteSections(ctx context.Context, in *SectionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, TrainTicketing_DeleteSections_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (c *trainTicketingClient) ModifyUser(ctx context.Context, in *User, opts ..
 	return out, nil
 }
 
-func (c *trainTicketingClient) RemoveUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *trainTicketingClient) RemoveUser(ctx context.Context, in *UseRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, TrainTicketing_RemoveUser_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -182,14 +182,14 @@ func (c *trainTicketingClient) ModifySeat(ctx context.Context, in *Ticket, opts 
 // All implementations must embed UnimplementedTrainTicketingServer
 // for forward compatibility
 type TrainTicketingServer interface {
-	CreateSection(context.Context, *Section) (*Section, error)
+	CreateSection(context.Context, *CreateSectionRequest) (*Section, error)
 	ViewSections(context.Context, *SectionRequest) (*AllSections, error)
-	DeleteSections(context.Context, *SectionRequest) (*Bool, error)
+	DeleteSections(context.Context, *SectionRequest) (*EmptyResponse, error)
 	ModifySections(context.Context, *Section) (*Section, error)
 	CreateUser(context.Context, *CreateUserRequest) (*User, error)
 	GetUsers(context.Context, *UseRequest) (*AllUsers, error)
 	ModifyUser(context.Context, *User) (*User, error)
-	RemoveUser(context.Context, *User) (*EmptyResponse, error)
+	RemoveUser(context.Context, *UseRequest) (*EmptyResponse, error)
 	PurchaseTicket(context.Context, *Ticket) (*Ticket, error)
 	ViewReceipt(context.Context, *User) (*Ticket, error)
 	ViewSeatsBySection(context.Context, *Section) (*SeatAllocation, error)
@@ -202,13 +202,13 @@ type TrainTicketingServer interface {
 type UnimplementedTrainTicketingServer struct {
 }
 
-func (UnimplementedTrainTicketingServer) CreateSection(context.Context, *Section) (*Section, error) {
+func (UnimplementedTrainTicketingServer) CreateSection(context.Context, *CreateSectionRequest) (*Section, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSection not implemented")
 }
 func (UnimplementedTrainTicketingServer) ViewSections(context.Context, *SectionRequest) (*AllSections, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ViewSections not implemented")
 }
-func (UnimplementedTrainTicketingServer) DeleteSections(context.Context, *SectionRequest) (*Bool, error) {
+func (UnimplementedTrainTicketingServer) DeleteSections(context.Context, *SectionRequest) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSections not implemented")
 }
 func (UnimplementedTrainTicketingServer) ModifySections(context.Context, *Section) (*Section, error) {
@@ -223,7 +223,7 @@ func (UnimplementedTrainTicketingServer) GetUsers(context.Context, *UseRequest) 
 func (UnimplementedTrainTicketingServer) ModifyUser(context.Context, *User) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ModifyUser not implemented")
 }
-func (UnimplementedTrainTicketingServer) RemoveUser(context.Context, *User) (*EmptyResponse, error) {
+func (UnimplementedTrainTicketingServer) RemoveUser(context.Context, *UseRequest) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUser not implemented")
 }
 func (UnimplementedTrainTicketingServer) PurchaseTicket(context.Context, *Ticket) (*Ticket, error) {
@@ -255,7 +255,7 @@ func RegisterTrainTicketingServer(s grpc.ServiceRegistrar, srv TrainTicketingSer
 }
 
 func _TrainTicketing_CreateSection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Section)
+	in := new(CreateSectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -267,7 +267,7 @@ func _TrainTicketing_CreateSection_Handler(srv interface{}, ctx context.Context,
 		FullMethod: TrainTicketing_CreateSection_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TrainTicketingServer).CreateSection(ctx, req.(*Section))
+		return srv.(TrainTicketingServer).CreateSection(ctx, req.(*CreateSectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -381,7 +381,7 @@ func _TrainTicketing_ModifyUser_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _TrainTicketing_RemoveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UseRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func _TrainTicketing_RemoveUser_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: TrainTicketing_RemoveUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TrainTicketingServer).RemoveUser(ctx, req.(*User))
+		return srv.(TrainTicketingServer).RemoveUser(ctx, req.(*UseRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
