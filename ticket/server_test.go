@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/google/uuid"
@@ -381,6 +382,487 @@ func (t *trainServer) ModifySeat(ctx context.Context, req *pb.ModifySeatRequest)
 	ticket.ModifiedOn = time.Now().String()
 	t.tickets[userid] = ticket
 	return ticket, nil
+}
+func setupTestServer() *trainServer {
+	return &trainServer{
+		users:          make(map[string]*pb.User),
+		tickets:        make(map[string]*pb.Ticket),
+		sections:       make(map[string]*pb.Section),
+		seats:          make(map[string][]int32),
+		allocatedSeats: make(map[string]string),
+	}
+}
+
+func TestTicketService(t *testing.T) {
+	t.Run("CreateUser", testCreateUser)
+	t.Run("GetUsers", testGetUsers)
+	t.Run("ModifyUser", testModifyUser)
+	t.Run("RemoveUser", testRemoveUser)
+	t.Run("CreateSection", testCreateSection)
+	t.Run("ViewSections", testViewSections)
+	t.Run("ModifySections", testModifySections)
+	t.Run("PurchaseTicket", testPurchaseTicket)
+	t.Run("ViewReceipt", testViewReceipt)
+	t.Run("ViewSeatsBySection", testViewSeatsBySection)
+	t.Run("CancelReceipt", testCancelReceipt)
+	t.Run("ModifySeat", testModifySeat)
+}
+func testCreateUser(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+}
+func testGetUsers(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	getreq := &pb.UseRequest{
+		UserID: createdUser.UserID,
+	}
+
+	allUser, err := s.GetUsers(context.Background(), getreq)
+	if err != nil {
+		t.Fatalf("GetUsers failed: %v", err)
+	}
+	if allUser == nil || len(allUser.Users) == 0 || allUser.Users[0].UserID != createdUser.UserID {
+		t.Errorf("Expected to read the created user, got different or nil user")
+	}
+}
+func testModifyUser(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	updatereq := &pb.User{
+		UserID:    createdUser.UserID,
+		FirstName: "Aman",
+		LastName:  "Jain",
+		Email:     "test2@gmail.com",
+	}
+
+	user, err := s.ModifyUser(context.Background(), updatereq)
+	if err != nil {
+		t.Fatalf("ModifyUser failed: %v", err)
+	}
+	if user == nil || user.UserID != createdUser.UserID {
+		t.Errorf("Expected to update the created user, got different or nil user")
+	}
+}
+func testRemoveUser(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	removereq := &pb.UseRequest{
+		UserID: createdUser.UserID,
+	}
+
+	_, err = s.RemoveUser(context.Background(), removereq)
+	if err != nil {
+		t.Fatalf("RemoveUser failed: %v", err)
+	}
+}
+func testCreateSection(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+}
+func testViewSections(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	viewreq := &pb.SectionRequest{
+		SectionID: createdSection.SectionID,
+	}
+
+	allsection, err := s.ViewSections(context.Background(), viewreq)
+	if err != nil {
+		t.Fatalf("ViewSections failed: %v", err)
+	}
+
+	if allsection == nil || len(allsection.Sections) == 0 || allsection.Sections[0].SectionID != createdSection.SectionID {
+		t.Errorf("Expected to read the created section, got different or nil section")
+	}
+}
+func testModifySections(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	updatereq := &pb.ModifySectionRequest{
+		SectionID: createdSection.SectionID,
+		Section:   "B",
+	}
+
+	section, err := s.ModifySections(context.Background(), updatereq)
+	if err != nil {
+		t.Fatalf("ModifySections failed: %v", err)
+	}
+
+	if section == nil || section.SectionID != createdSection.SectionID {
+		t.Errorf("Expected to update the created section, got different or nil section")
+	}
+}
+func testPurchaseTicket(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	sreq := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), sreq)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	treq := &pb.TicketRequest{
+		From:      "Location 1",
+		To:        "Location 2",
+		UserID:    createdUser.UserID,
+		PricePaid: 100,
+	}
+
+	ticket, err := s.PurchaseTicket(context.Background(), treq)
+	if err != nil {
+		t.Fatalf("PurchaseTicket failed: %v", err)
+	}
+
+	if ticket == nil || ticket.TicketId == "" {
+		t.Errorf("Expected TicketId to be set, got empty string")
+	}
+}
+func testViewReceipt(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	sreq := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), sreq)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	treq := &pb.TicketRequest{
+		From:      "Location 1",
+		To:        "Location 2",
+		UserID:    createdUser.UserID,
+		PricePaid: 100,
+	}
+
+	ticket, err := s.PurchaseTicket(context.Background(), treq)
+	if err != nil {
+		t.Fatalf("PurchaseTicket failed: %v", err)
+	}
+
+	if ticket == nil || ticket.TicketId == "" {
+		t.Errorf("Expected TicketId to be set, got empty string")
+	}
+	viewreq := &pb.UseRequest{
+		UserID: createdUser.UserID,
+	}
+
+	receipt, err := s.ViewReceipt(context.Background(), viewreq)
+	if err != nil {
+		t.Fatalf("ViewReceipt failed: %v", err)
+	}
+
+	if receipt == nil {
+		t.Errorf("Expected to get receipt, got empty")
+	}
+}
+func testViewSeatsBySection(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	sreq := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), sreq)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	treq := &pb.TicketRequest{
+		From:      "Location 1",
+		To:        "Location 2",
+		UserID:    createdUser.UserID,
+		PricePaid: 100,
+	}
+
+	ticket, err := s.PurchaseTicket(context.Background(), treq)
+	if err != nil {
+		t.Fatalf("PurchaseTicket failed: %v", err)
+	}
+
+	if ticket == nil || ticket.TicketId == "" {
+		t.Errorf("Expected TicketId to be set, got empty string")
+	}
+	viewreq := &pb.SectionRequest{
+		SectionID: createdSection.SectionID,
+	}
+
+	seatAllocation, err := s.ViewSeatsBySection(context.Background(), viewreq)
+	if err != nil {
+		t.Fatalf("ViewSeatsBySection failed: %v", err)
+	}
+
+	if seatAllocation == nil || len(seatAllocation.Tickets) == 0 || seatAllocation.Tickets[0].Email != createdUser.Email {
+		t.Errorf("Expected to get seats, got empty")
+	}
+}
+func testCancelReceipt(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	sreq := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), sreq)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	treq := &pb.TicketRequest{
+		From:      "Location 1",
+		To:        "Location 2",
+		UserID:    createdUser.UserID,
+		PricePaid: 100,
+	}
+
+	ticket, err := s.PurchaseTicket(context.Background(), treq)
+	if err != nil {
+		t.Fatalf("PurchaseTicket failed: %v", err)
+	}
+
+	if ticket == nil || ticket.TicketId == "" {
+		t.Errorf("Expected TicketId to be set, got empty string")
+	}
+	cancelreq := &pb.UseRequest{
+		UserID: createdUser.UserID,
+	}
+
+	_, err = s.CancelReceipt(context.Background(), cancelreq)
+	if err != nil {
+		t.Fatalf("CancelReceipt failed: %v", err)
+	}
+}
+func testModifySeat(t *testing.T) {
+	s := setupTestServer()
+
+	req := &pb.CreateUserRequest{
+		FirstName: "Aman",
+		LastName:  "jain",
+		Email:     "test@gmail.com",
+	}
+
+	createdUser, err := s.CreateUser(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if createdUser.UserID == "" {
+		t.Errorf("Expected UserID to be set, got empty string")
+	}
+	sreq := &pb.CreateSectionRequest{
+		Section:    "A",
+		TotalSeats: 10,
+	}
+
+	createdSection, err := s.CreateSection(context.Background(), sreq)
+	if err != nil {
+		t.Fatalf("CreateSection failed: %v", err)
+	}
+
+	if createdSection.SectionID == "" {
+		t.Errorf("Expected SectionID to be set, got empty string")
+	}
+	treq := &pb.TicketRequest{
+		From:      "Location 1",
+		To:        "Location 2",
+		UserID:    createdUser.UserID,
+		PricePaid: 100,
+	}
+
+	ticket, err := s.PurchaseTicket(context.Background(), treq)
+	if err != nil {
+		t.Fatalf("PurchaseTicket failed: %v", err)
+	}
+
+	if ticket == nil || ticket.TicketId == "" {
+		t.Errorf("Expected TicketId to be set, got empty string")
+	}
+	updatereq := &pb.ModifySeatRequest{
+		Section:    createdSection.SectionID,
+		UserID:     createdUser.UserID,
+		SeatNumber: 3,
+	}
+
+	updatedticket, err := s.ModifySeat(context.Background(), updatereq)
+	if err != nil {
+		t.Fatalf("ModifySeat failed: %v", err)
+	}
+
+	if updatedticket == nil || updatedticket.TicketId != ticket.TicketId {
+		t.Errorf("Expected to update seats, got different or nil ticket")
+	}
 }
 func main() {
 	lis, err := net.Listen("tcp", ":8080")
